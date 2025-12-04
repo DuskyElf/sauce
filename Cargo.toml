@@ -1,0 +1,10 @@
+[package]
+name = "sauce"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+logos = "0.14"
+chumsky = "1.0.0-alpha.6"
+ariadne = "0.3"
+inkwell = "0.4"
