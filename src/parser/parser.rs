@@ -15,7 +15,13 @@ pub fn parser_ident<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + C
 }
 
 fn parser_atom<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Clone {
-    parser_integer().or(parser_ident())
+    let yell_fn = select! {
+        SpannedToken { token: Token::Yell, .. } => Expr::Ident("yell".to_string()),
+    };
+
+    parser_integer()
+        .or(parser_ident())
+        .or(yell_fn)
 }
 
 pub fn parser_expr<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Clone {
