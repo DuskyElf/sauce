@@ -1,11 +1,10 @@
+use chumsky::Parser as _;
 use sauce::lexer::{Lexer, SpannedToken};
-use sauce::parser::parser_statement;
-use sauce::ast::ast::{Ast, Statement};
-
-use chumsky::prelude::*;
+use sauce::parser::{parser_statement};
+use chumsky::IterParser;
+use sauce::ast::ast::Ast;
 
 fn main() {
-
     let src_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "example.sauce".to_string());
@@ -13,6 +12,7 @@ fn main() {
     let src = std::fs::read_to_string(&src_path)
         .unwrap_or_else(|e| panic!("failed to read {}: {e}", src_path));
 
+    // LEXING
     let lexer = Lexer::new(&src);
     let mut tokens: Vec<SpannedToken> = Vec::new();
 
@@ -25,16 +25,15 @@ fn main() {
             }
         }
     }
-
+    // PARSING
     let parser = parser_statement()
         .repeated()
-        .collect::<Vec<Statement>>();
+        .collect::<Vec<_>>();
 
     let result = parser.parse(tokens.as_slice()).into_result();
 
     match result {
         Ok(items) => {
-            // items: Vec<Statement>
             let ast = Ast { items };
             println!("{:#?}", ast);
         }

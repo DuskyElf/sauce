@@ -1,6 +1,42 @@
 use crate::lexer::{SpannedToken, Token};
-use crate::ast::ast::{Expr, Statement};
+use crate::ast::ast::{Expr, Statement, Ast};
+use crate::errors::parse::ParseError;
+
 use chumsky::prelude::*;
+use chumsky::select;
+
+pub struct SauceParser;
+
+impl SauceParser {
+    pub fn new() -> Self {
+        SauceParser
+    }
+
+    pub fn parse(&self, tokens: &[SpannedToken]) -> Result<Ast, ParseError> {
+        let stmts_parser = parser_statement().repeated()
+            .collect::<Vec<_>>();
+
+        let parse_result = stmts_parser.parse(tokens);
+        let result = parse_result.into_result();
+
+        match result {
+            Ok(stmts) => Ok(Ast { items: stmts }),
+            Err(errors) => {
+                let first = errors
+                    .into_iter()
+                    .next()
+                    .expect("parser reported no errors but returned Err");
+
+                Err(Self::map_error(first))
+            }
+        }
+    }
+
+    fn map_error<E: std::fmt::Display>(err: E) -> ParseError {
+        ParseError::Generic(err.to_string())
+    }
+}
+
 
 pub fn parser_integer<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Clone {
     select! {
@@ -15,13 +51,8 @@ pub fn parser_ident<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + C
 }
 
 fn parser_atom<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Clone {
-    let yell_fn = select! {
-        SpannedToken { token: Token::Yell, .. } => Expr::Ident("yell".to_string()),
-    };
-
     parser_integer()
         .or(parser_ident())
-        .or(yell_fn)
 }
 
 pub fn parser_expr<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Clone {
@@ -29,8 +60,7 @@ pub fn parser_expr<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Cl
         SpannedToken { token: Token::Pipe, .. } => (),
     };
 
-    parser_atom().foldl(
-        pipe.ignore_then(parser_atom()).repeated(),
+    parser_atom().foldl( pipe.ignore_then(parser_atom()).repeated(),
         |left, right| Expr::Pipeline(Box::new(left), Box::new(right)),
     )
 }
