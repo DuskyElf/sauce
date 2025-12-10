@@ -139,21 +139,16 @@ fn parser_let<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Cl
 }
 
 
-pub fn parser_toss_stmt<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Clone {
-    let toss_kw = select! {
-        SpannedToken { token: Token::Toss, .. } => (),
-    };
+fn parser_expr_stmt<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Clone {
     let semi = select! {
         SpannedToken { token: Token::Semicolon, .. } => (),
     };
 
-    toss_kw
-        .ignore_then(parser_expr())
-        .then_ignore(semi)
-        .map(|expr| Statement::Toss { expr })
+    parser_expr().then_ignore(semi)
+        .map(Statement::ExprStmt)
 }
 
 
 pub fn parser_statement<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Clone {
-    parser_let().or(parser_yell()).or(parser_toss_stmt())
+    parser_let().or(parser_yell()).or(parser_expr_stmt())
 }
