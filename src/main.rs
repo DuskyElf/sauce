@@ -1,8 +1,5 @@
-use chumsky::Parser as _;
-use sauce::lexer::{Lexer, SpannedToken};
-use sauce::parser::{parser_statement};
-use chumsky::IterParser;
-use sauce::ast::ast::Ast;
+use sauce::lexer::Lexer;
+use sauce::parser::SauceParser;
 
 fn main() {
     let src_path = std::env::args()
@@ -13,33 +10,18 @@ fn main() {
         .unwrap_or_else(|e| panic!("failed to read {}: {e}", src_path));
 
     let lexer = Lexer::new(&src);
-    let mut tokens: Vec<SpannedToken> = Vec::new();
+    let tokens: Vec<_> = lexer
+        .collect::<Result<_, _>>()
+        .unwrap_or_else(|e| {
+            eprintln!("lex error: {e}");
+            std::process::exit(1);
+        });
 
-    for item in lexer {
-        match item {
-            Ok(tok) => tokens.push(tok),
-            Err(e) => {
-                eprintln!("lex error: {e}");
-                return;
-            }
-        }
-    }
+    let parser = SauceParser::new();
+    let ast = parser.parse(&tokens).unwrap_or_else(|e| {
+        eprintln!("parse error: {e}");
+        std::process::exit(1);
+    });
 
-    let parser = parser_statement()
-        .repeated()
-        .collect::<Vec<_>>();
-
-    let result = parser.parse(tokens.as_slice()).into_result();
-
-    match result {
-        Ok(items) => {
-            let ast = Ast { items };
-            println!("{:#?}", ast);
-        }
-        Err(errors) => {
-            for err in errors {
-                eprintln!("parse error: {err}");
-            }
-        }
-    }
+    println!("{:#?}", ast);
 }

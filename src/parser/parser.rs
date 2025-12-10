@@ -59,11 +59,19 @@ pub fn parser_string<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + 
     select! { SpannedToken { token: Token::String(value), ..} => Expr::String(value) }
 }
 pub fn parser_expr<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Clone {
-    recursive(|expr| {
+    recursive(|expr| {let toss_kw = select! {
+            SpannedToken { token: Token::Toss, .. } => (),
+        };
+
+        let toss_expr = toss_kw.ignore_then(parser_name()).then(expr.clone().or_not())
+            .map(|(effect, arg)| Expr::Toss {
+                effect, arg: arg.map(Box::new),
+            });
 
         let atom_base = parser_integer()
             .or(parser_ident())
-            .or(parser_string());
+            .or(parser_string())
+            .or(toss_expr);
 
         let lparen = select! {
             SpannedToken { token: Token::LParen, .. } => (),
@@ -78,13 +86,15 @@ pub fn parser_expr<'src>() -> impl Parser<'src, &'src [SpannedToken], Expr> + Cl
 
         let atom = atom_base.or(paren_expr);
         let atom_for_pipe = atom.clone();
+
         let pipe = select! {
             SpannedToken { token: Token::Pipe, .. } => (),
         };
-        atom.foldl( pipe.ignore_then(atom_for_pipe).repeated(),
-        |left, right| Expr::Pipeline(Box::new(left), Box::new(right)),
-    )
 
+        atom.foldl(
+            pipe.ignore_then(atom_for_pipe).repeated(),
+            |left, right| Expr::Pipeline(Box::new(left), Box::new(right)),
+        )
     })
 }
 
@@ -128,6 +138,22 @@ fn parser_let<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Cl
         .map(|(name, expr)| Statement::Let { name, expr })
 }
 
+
+pub fn parser_toss_stmt<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Clone {
+    let toss_kw = select! {
+        SpannedToken { token: Token::Toss, .. } => (),
+    };
+    let semi = select! {
+        SpannedToken { token: Token::Semicolon, .. } => (),
+    };
+
+    toss_kw
+        .ignore_then(parser_expr())
+        .then_ignore(semi)
+        .map(|expr| Statement::Toss { expr })
+}
+
+
 pub fn parser_statement<'src>() -> impl Parser<'src, &'src [SpannedToken], Statement> + Clone {
-    parser_let().or(parser_yell())
+    parser_let().or(parser_yell()).or(parser_toss_stmt())
 }

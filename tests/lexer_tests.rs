@@ -70,7 +70,6 @@ fn lexer_skips_whitespace() {
     let lexer = Lexer::new(src);
     let tokens: Vec<_> = lexer.collect();
 
-    // should only see: grab, x
     assert_eq!(tokens.len(), 2);
 
     let t0 = unwrap_ok_token(&tokens[0]);

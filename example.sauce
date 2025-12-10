@@ -1,2 +1,5 @@
-grab x = 10;
-yell x |> yell;
+grab x = (1 |> 2) |> toss boom "oh no";
+
+yell x;
+
+toss crash "fatal";

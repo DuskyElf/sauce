@@ -18,4 +18,9 @@ pub enum Expr {
     Int(i64),
     String(String),
     Pipeline(Box<Expr>, Box<Expr>),
+
+    Toss {
+        effect: String,
+        arg: Option<Box<Expr>>,
+    },
 }
