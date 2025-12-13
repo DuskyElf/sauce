@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use crate::ast::ast::{Expr, Ast};
-use crate::typecheck::{types::Type, errors::TypeError};
+use crate::ast::ast::{Expr, Ast, Statement};
+use crate::typechecker::{types::Type, errors::TypeError};
 
 
 #[derive(Debug)]
@@ -55,4 +55,29 @@ pub fn typecheck_program(ast: &Ast) -> Result<(), TypeError> {
     }
 
     Ok(())
+}
+
+pub fn typecheck_stmt(env: &mut TypeEnv, stmt: &Statement) -> Result<(), TypeError> {
+    match stmt {
+        Statement::Let { name, expr } => {
+            let ty = typecheck_expr(env, expr)?;
+            env.insert(name.clone(), ty);
+            Ok(())
+        }
+
+        Statement::Yell { expr } => {
+            typecheck_expr(env, expr)?;
+            Ok(())
+        }
+
+        Statement::ExprStmt(expr) => {
+            typecheck_expr(env, expr)?;
+            Ok(())
+        }
+
+        Statement::Toss { expr } => {
+            typecheck_expr(env, expr)?;
+            Ok(())
+        }
+    }
 }
