@@ -28,19 +28,7 @@ fn typecheck_unknown_ident() {
     let result = typecheck_program(&ast);
     assert!(result.is_err());
 }
-#[test]
-fn typecheck_pipeline() {
-    let src = "grab x = 1 |> 2 |> 3;";
-    let tokens = Lexer::new(src)
-        .collect::<Result<Vec<_>, _>>()
-        .expect("lex failed");
 
-    let parser = SauceParser::new();
-    let ast = parser.parse(&tokens).expect("parse failed");
-
-    let result = typecheck_program(&ast);
-    assert!(result.is_ok());
-}
 #[test]
 fn typecheck_toss() {
     let src = "toss oops \"bad\";";
@@ -56,9 +44,11 @@ fn typecheck_toss() {
 }
 
 #[test]
-fn pipeline_into_literal_fail() {
-    let src = "grab x = 1 |> 2;";
-    let tokens = Lexer::new(src).collect::<Result<Vec<_>, _>>().unwrap();
+fn typecheck_pipeline_into_literal_should_fail() {
+    let src = "grab x = 1 |> 2 |> 3;";
+    let tokens = Lexer::new(src)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
 
     let ast = SauceParser::new().parse(&tokens).unwrap();
     let result = typecheck_program(&ast);
