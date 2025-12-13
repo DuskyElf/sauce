@@ -9,7 +9,7 @@ pub enum TypeError {
     #[error("type mismatch at {0:?}: expected {1}, found {2}")]
     Mismatch(Span, String, String),
 
-     #[error("invalid pipeline at {0:?}: right side must be callable")]
+    #[error("invalid pipeline at {0:?}: right side must be callable")]
     InvalidPipeline(Span),
 
     #[error("generic type error: {0}")]

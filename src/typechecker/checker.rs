@@ -1,7 +1,6 @@
+use crate::ast::ast::{Ast, Expr, Statement};
+use crate::typechecker::{errors::TypeError, types::Type};
 use std::collections::HashMap;
-use crate::ast::ast::{Expr, Ast, Statement};
-use crate::typechecker::{types::Type, errors::TypeError};
-
 
 #[derive(Debug)]
 pub struct TypeEnv {
@@ -28,24 +27,26 @@ pub fn typecheck_expr(env: &TypeEnv, expr: &Expr) -> Result<Type, TypeError> {
 
         Expr::String(_) => Ok(Type::String),
 
-        Expr::Ident(name) => {
-            match env.get(name) {
-                Some(ty) => Ok(ty.clone()),
-                None => Err(TypeError::Generic(format!(
-                    "unknown identifier `{}`",
-                    name
-                ))),
-            }
-        }
+        Expr::Ident(name) => match env.get(name) {
+            Some(ty) => Ok(ty.clone()),
+            None => Err(TypeError::Generic(format!("unknown identifier `{}`", name))),
+        },
 
         Expr::Toss { .. } => Ok(Type::Unit),
 
-        Expr::Pipeline(_, right) => {
-            typecheck_expr(env, right)
+        Expr::Pipeline(left, right) => {
+            let _left_ty = typecheck_expr(env, left)?;
+            let right_ty = typecheck_expr(env, right)?;
+
+            match right_ty {
+                Type::Int | Type::String => Err(TypeError::Generic(
+                    "right side of pipeline cannot be a literal".into(),
+                )),
+                _ => Ok(right_ty),
+            }
         }
     }
 }
-
 
 pub fn typecheck_program(ast: &Ast) -> Result<(), TypeError> {
     let mut env = TypeEnv::new();

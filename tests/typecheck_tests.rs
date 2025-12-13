@@ -54,3 +54,14 @@ fn typecheck_toss() {
     let result = typecheck_program(&ast);
     assert!(result.is_ok());
 }
+
+#[test]
+fn pipeline_into_literal_fail() {
+    let src = "grab x = 1 |> 2;";
+    let tokens = Lexer::new(src).collect::<Result<Vec<_>, _>>().unwrap();
+
+    let ast = SauceParser::new().parse(&tokens).unwrap();
+    let result = typecheck_program(&ast);
+
+    assert!(result.is_err());
+}
